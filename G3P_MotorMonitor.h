@@ -4,12 +4,4 @@ typedef struct {
   int hlfb;
 } MotorStatus;
 
-typedef struct {
-  MotorStatus x;
-  MotorStatus xp;
-  MotorStatus y;
-  MotorStatus z;
-  MotorStatus a;
-  MotorStatus s;
-} Motors;
 

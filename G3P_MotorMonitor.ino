@@ -2,70 +2,45 @@
 
 const int HLFB_THRESH = 3; //the level at which motor is considered errored (to 'debounce'), by side-effect controls the number of 'change' updates occuring. 
 
-const int PIN_HLFB_X = 2;
-const int PIN_HLFB_XP = 3;
-const int PIN_HLFB_Y = 4;
-const int PIN_HLFB_Z = 5;
-const int PIN_HLFB_A = 6;
-const int PIN_HLFB_S = 7;
+//HLFB and EN pins, in order [X, XP, Y, Z, A, S] which is the order chilipeppr expects it.
+//NOTICE: X and XP share an EN pin, but not a HLFB pin
+const int HLFB_PINS[] = {2,3,4,5,6,7};
+const int EN_PINS[] = {8,8,9,10,11,12};
+const int MOTOR_COUNT = sizeof(HLFB_PINS)/sizeof(int);
 
-const int PIN_EN_X = 8;
-const int PIN_EN_XP = 8;
-const int PIN_EN_Y = 9;
-const int PIN_EN_Z = 10;
-const int PIN_EN_A = 11;
-const int PIN_EN_S = 12;
-
+//'enum' for motor status
 const int MOT_ENABLED = 1;
 const int MOT_DISABLED = 0;
 const int MOT_ERROR = -1;
 
 const int MIN_UPDATE_INTERVAL = 2500; //if this time (milliseconds) or more passed since the last update, send another
-const int SAMPLE_INTERVAL = 100; //sample the motor status every N milliseconds. (recommended 50-200)
+const int SAMPLING_INTERVAL = 100; //sample the motor status every N milliseconds. (recommended 50-200)
 
 unsigned long lastUpdateTime;
 
-Motors motors;
+MotorStatus motors[MOTOR_COUNT];
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(PIN_HLFB_X, INPUT_PULLUP);
-  pinMode(PIN_HLFB_XP, INPUT_PULLUP);
-  pinMode(PIN_HLFB_Y, INPUT_PULLUP);
-  pinMode(PIN_HLFB_Z, INPUT_PULLUP);
-  pinMode(PIN_HLFB_A, INPUT_PULLUP);
-  pinMode(PIN_HLFB_S, INPUT_PULLUP);
-
-  pinMode(PIN_EN_X, INPUT);
-  pinMode(PIN_EN_XP, INPUT);
-  pinMode(PIN_EN_Y, INPUT);
-  pinMode(PIN_EN_Z, INPUT);
-  pinMode(PIN_EN_A, INPUT);
-  pinMode(PIN_EN_S, INPUT);
+  for (int i = 0; i<MOTOR_COUNT; i++) {
+    pinMode(HLFB_PINS[i], INPUT_PULLUP);
+    pinMode(EN_PINS[i],INPUT);
+  }
 
   initializeMotorsStruct();
 
   lastUpdateTime = millis();
   Serial.begin(115200);
   Serial.println("MotorMon Start");
-  Serial.println("[-----]");
+  Serial.println("[------]");
 
 }
 
 void initializeMotorsStruct() {
-  motors.x.en = true;
-  motors.xp.en = true;
-  motors.y.en = true;
-  motors.z.en = true;
-  motors.a.en = true;
-  motors.s.en = true;
-
-  motors.x.hlfb = 0;
-  motors.xp.hlfb = 0;
-  motors.y.hlfb = 0;
-  motors.z.hlfb = 0;
-  motors.a.hlfb = 0;
-  motors.s.hlfb = 0;
+  for (int i = 0; i<MOTOR_COUNT; i++) {
+    motors[i].en = true;
+    motors[i].hlfb = 0;
+  }
 }
 
 /**
@@ -105,25 +80,22 @@ bool _updateEnStatus(MotorStatus* ms, bool pinState) {
   }
 }
 
+bool updateMotorStatus(MotorStatus* ms, bool enPinState, bool hlfbPinState) {
+  bool changed = _updateEnStatus(ms, enPinState);
+  changed |= _updateHLFB(ms, hlfbPinState);
+
+  return changed;
+}
+
 /**
  * Update motor struct. Return true iff something changed.
  */
-bool updateMotorStatus() {
+bool updateAllMotorsStatus() {
   bool changeOccured = false;
 
-  changeOccured |= _updateEnStatus(&motors.x, digitalRead(PIN_EN_X));
-  changeOccured |= _updateEnStatus(&motors.xp, digitalRead(PIN_EN_XP));
-  changeOccured |= _updateEnStatus(&motors.y, digitalRead(PIN_EN_Y));
-  changeOccured |= _updateEnStatus(&motors.z, digitalRead(PIN_EN_Z));
-  changeOccured |= _updateEnStatus(&motors.a, digitalRead(PIN_EN_A));
-  changeOccured |= _updateEnStatus(&motors.s, digitalRead(PIN_EN_S));
-
-  changeOccured |= _updateHLFB(&motors.x, digitalRead(PIN_HLFB_X));
-  changeOccured |= _updateHLFB(&motors.xp, digitalRead(PIN_HLFB_XP));
-  changeOccured |= _updateHLFB(&motors.y, digitalRead(PIN_HLFB_Y));
-  changeOccured |= _updateHLFB(&motors.z, digitalRead(PIN_HLFB_Z));
-  changeOccured |= _updateHLFB(&motors.a, digitalRead(PIN_HLFB_A));
-  changeOccured |= _updateHLFB(&motors.s, digitalRead(PIN_HLFB_S));
+  for (int i = 0; i<MOTOR_COUNT; i++) {
+    changeOccured |= updateMotorStatus(&motors[i], digitalRead(EN_PINS[i]), digitalRead(HLFB_PINS[i]));
+  }
 
   return changeOccured;
 }
@@ -153,37 +125,40 @@ String motorStatusShortStr(MotorStatus ms) {
   }
 }
 
+//for debugging
 String motorsStatusStr() {
-  return "X: "+motorStatusStr(motors.x)
-  + " XP: "+motorStatusStr(motors.xp)
-  + " Y: "+motorStatusStr(motors.y)
-  + " Z: "+motorStatusStr(motors.z)
-  + " A: "+motorStatusStr(motors.a)
-  + " S: "+motorStatusStr(motors.a)+"\n";
+  return "X: "+motorStatusStr(motors[0])
+  + " XP: "+motorStatusStr(motors[1])
+  + " Y: "+motorStatusStr(motors[2])
+  + " Z: "+motorStatusStr(motors[3])
+  + " A: "+motorStatusStr(motors[4])
+  + " S: "+motorStatusStr(motors[5])+"\n";
 }
 
+//for 'production' to communicate w/ Chilipeppr
 String motorStatusShortStr() {
-  return "["+motorStatusShortStr(motors.x)
-    + motorStatusShortStr(motors.xp)  
-    + motorStatusShortStr(motors.y)  
-    + motorStatusShortStr(motors.z)  
-    + motorStatusShortStr(motors.a)
-    + motorStatusShortStr(motors.s)+"]\n";  
+  String result = "[";
+  for (int i=0; i<MOTOR_COUNT; i++) {
+    result+=motorStatusShortStr(motors[i]);
+  }
+  return result+"]\n";  
 }
 
 void sendUpdate() {
   lastUpdateTime = millis();
 
- // String str = motorsStatusStr();
-  String str = motorStatusShortStr();
+ // String str = motorsStatusStr(); //debug
+  String str = motorStatusShortStr(); //production
   
   Serial.print(str);
-//  Serial.println(millis());
+//  Serial.println(millis()); //for debug
 }
 
 void loop() {
-  if (updateMotorStatus() || ((millis()-lastUpdateTime) >= MIN_UPDATE_INTERVAL)) {
+  if (updateAllMotorsStatus() || ((millis()-lastUpdateTime) >= MIN_UPDATE_INTERVAL)) {
     sendUpdate();
   }
-  delay(SAMPLE_INTERVAL); 
+  
+  delay(SAMPLING_INTERVAL); 
 }
+
