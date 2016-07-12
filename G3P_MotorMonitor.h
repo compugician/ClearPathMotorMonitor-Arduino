@@ -10,5 +10,6 @@ typedef struct {
   MotorStatus y;
   MotorStatus z;
   MotorStatus a;
+  MotorStatus s;
 } Motors;
 

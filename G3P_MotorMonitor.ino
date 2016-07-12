@@ -7,12 +7,14 @@ const int PIN_HLFB_XP = 3;
 const int PIN_HLFB_Y = 4;
 const int PIN_HLFB_Z = 5;
 const int PIN_HLFB_A = 6;
+const int PIN_HLFB_S = 7;
 
 const int PIN_EN_X = 8;
 const int PIN_EN_XP = 8;
 const int PIN_EN_Y = 9;
 const int PIN_EN_Z = 10;
 const int PIN_EN_A = 11;
+const int PIN_EN_S = 12;
 
 const int MOT_ENABLED = 1;
 const int MOT_DISABLED = 0;
@@ -32,11 +34,14 @@ void setup() {
   pinMode(PIN_HLFB_Y, INPUT_PULLUP);
   pinMode(PIN_HLFB_Z, INPUT_PULLUP);
   pinMode(PIN_HLFB_A, INPUT_PULLUP);
+  pinMode(PIN_HLFB_S, INPUT_PULLUP);
+
   pinMode(PIN_EN_X, INPUT);
   pinMode(PIN_EN_XP, INPUT);
   pinMode(PIN_EN_Y, INPUT);
   pinMode(PIN_EN_Z, INPUT);
   pinMode(PIN_EN_A, INPUT);
+  pinMode(PIN_EN_S, INPUT);
 
   initializeMotorsStruct();
 
@@ -53,12 +58,14 @@ void initializeMotorsStruct() {
   motors.y.en = true;
   motors.z.en = true;
   motors.a.en = true;
+  motors.s.en = true;
 
   motors.x.hlfb = 0;
   motors.xp.hlfb = 0;
   motors.y.hlfb = 0;
   motors.z.hlfb = 0;
   motors.a.hlfb = 0;
+  motors.s.hlfb = 0;
 }
 
 /**
@@ -109,12 +116,14 @@ bool updateMotorStatus() {
   changeOccured |= _updateEnStatus(&motors.y, digitalRead(PIN_EN_Y));
   changeOccured |= _updateEnStatus(&motors.z, digitalRead(PIN_EN_Z));
   changeOccured |= _updateEnStatus(&motors.a, digitalRead(PIN_EN_A));
+  changeOccured |= _updateEnStatus(&motors.s, digitalRead(PIN_EN_S));
 
   changeOccured |= _updateHLFB(&motors.x, digitalRead(PIN_HLFB_X));
   changeOccured |= _updateHLFB(&motors.xp, digitalRead(PIN_HLFB_XP));
   changeOccured |= _updateHLFB(&motors.y, digitalRead(PIN_HLFB_Y));
   changeOccured |= _updateHLFB(&motors.z, digitalRead(PIN_HLFB_Z));
   changeOccured |= _updateHLFB(&motors.a, digitalRead(PIN_HLFB_A));
+  changeOccured |= _updateHLFB(&motors.s, digitalRead(PIN_HLFB_S));
 
   return changeOccured;
 }
@@ -149,7 +158,8 @@ String motorsStatusStr() {
   + " XP: "+motorStatusStr(motors.xp)
   + " Y: "+motorStatusStr(motors.y)
   + " Z: "+motorStatusStr(motors.z)
-  + " A: "+motorStatusStr(motors.a)+"\n";
+  + " A: "+motorStatusStr(motors.a)
+  + " S: "+motorStatusStr(motors.a)+"\n";
 }
 
 String motorStatusShortStr() {
@@ -157,7 +167,8 @@ String motorStatusShortStr() {
     + motorStatusShortStr(motors.xp)  
     + motorStatusShortStr(motors.y)  
     + motorStatusShortStr(motors.z)  
-    + motorStatusShortStr(motors.a)+"]\n";  
+    + motorStatusShortStr(motors.a)
+    + motorStatusShortStr(motors.s)+"]\n";  
 }
 
 void sendUpdate() {
