@@ -1,6 +1,6 @@
 #include "G3P_MotorMonitor.h"
 
-const int HLFB_THRESH = 3; //the level at which motor is considered errored (to 'debounce'), by side-effect controls the number of 'change' updates occuring. 
+const int HLFB_THRESH = 4; //the level at which motor is considered errored (to 'debounce'), by side-effect controls the number of 'change' updates occuring. 
 
 //HLFB and EN pins, in order [X, XP, Y, Z, A, S] which is the order chilipeppr expects it.
 //NOTICE: X and XP share an EN pin, but not a HLFB pin
@@ -141,7 +141,19 @@ String motorStatusShortStr() {
   for (int i=0; i<MOTOR_COUNT; i++) {
     result+=motorStatusShortStr(motors[i]);
   }
-  return result+"]\n";  
+  result = result + "]"; 
+
+/*
+  result = result + "{";
+  for (int i=0; i<MOTOR_COUNT; i++) {
+     result+=" ";
+     result = result +motors[i].hlfb;
+     result+=" ";
+  }
+  result = result + "}";
+*/ 
+  
+  return result+"\n";  
 }
 
 void sendUpdate() {
